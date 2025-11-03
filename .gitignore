@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# Generated outputs
+outputs/
+*.mp4
+concat.txt
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build artifacts
+dist/
+build/
+*.log
+
+# Image files (if you don't want to commit source images)
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.gif
+
+# Temporary files
+*.tmp
+tmp/
+temp/
+
