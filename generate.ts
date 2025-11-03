@@ -5,6 +5,7 @@ import path from "node:path";
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
 import {
+  FPS,
   PREFIX,
   PUPIL_BOUND,
   ROTATE_BOUND,
@@ -12,6 +13,7 @@ import {
   Y_STEPS,
   steps,
 } from "./constants.js";
+import pAll from 'p-all';
 
 const execAsync = promisify(exec);
 
@@ -71,11 +73,11 @@ async function generateVideo() {
   const command = `ffmpeg -y \
     -f concat \
     -safe 0 \
-    -r 10 \
+    -r ${FPS} \
     -i "${concatFile}" \
     -c:v libx264 \
     -preset slow \
-    -crf 18 \
+    -crf 23 \
     -pix_fmt yuv420p \
     "${videoOutput}"`;
 
@@ -92,16 +94,24 @@ async function generateVideo() {
   }
 }
 
-const cost = steps.length * 0.00098;
+const cost = steps.flat().length * 0.00098;
 const formatter=new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
 });
 
 console.log(`Estimated cost: ${formatter.format(cost)}`);
-await Promise.all(steps.flat().map(generate));
+
+const actions = steps.flat().map((step) => () => generate(step));
+await pAll(actions, { concurrency: 5 });
+
+// await Promise.all(steps.flat().map(generate));
+// for(const step of steps.flat()) {
+//   await generate(step);
+// }
 
 // Generate the video from all images
+console.log(`Generating video from ${steps.flat().length} images...`);
 await generateVideo();
 
 /*

@@ -1,4 +1,4 @@
-import { PREFIX, X_STEPS, Y_STEPS, steps } from './constants.js';
+import { FPS, PREFIX, X_STEPS, Y_STEPS, steps } from './constants.js';
 
 // Create a grid container
 const preview = document.querySelector('.preview') as HTMLDivElement;
@@ -43,7 +43,14 @@ for (const row of steps) {
 }
 
 // Track mouse movement and update images
+let lastFrameTime = 0;
 document.addEventListener('mousemove', (e) => {
+  // Throttle to match video FPS for smoother playback
+  const now = performance.now();
+  if (now - lastFrameTime < 1000 / FPS) {
+    return;
+  }
+  lastFrameTime = now;
   // Calculate container center position
   const containerRect = videoContainer.getBoundingClientRect();
   const containerCenterX = containerRect.left + containerRect.width / 2;
@@ -66,13 +73,14 @@ document.addEventListener('mousemove', (e) => {
   // Calculate frame index (row-major order: y * width + x)
   const frameIndex = videoYIndex * X_STEPS + videoXIndex;
 
-  // Calculate time for this frame (10fps = 100ms per frame)
-  const frameTime = frameIndex / 10;
+  // Calculate time for this frame based on FPS
+  const frameTime = frameIndex / FPS;
 
   // Update video currentTime if it's loaded
   if (video.readyState >= 2) { // HAVE_CURRENT_DATA or better
     video.currentTime = frameTime;
   }
+  console.log(videoXIndex, videoYIndex, frameTime);
 
   // Update all images
   images.forEach((img) => {
@@ -96,7 +104,7 @@ document.addEventListener('mousemove', (e) => {
     const yIndex = Math.round(((normalizedY + 1) / 2) * (Y_STEPS - 1));
 
     // Update the image source - access nested array [row][col]
-    img.src = `./outputs/${PREFIX}/${steps[yIndex][xIndex].filename}`;
+    // img.src = `./outputs/${PREFIX}/${steps[yIndex][xIndex].filename}`;
   });
 });
 
