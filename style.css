@@ -37,14 +37,16 @@ body {
   height: 100vh;
   --x-steps: 10;
   --y-steps: 10;
-  grid-template-columns: repeat(var(--x-steps), calc(100% / var(--y-steps)));
-  grid-template-rows: repeat(var(--y-steps), calc(100% / var(--x-steps)));
+  grid-template-columns: repeat(var(--x-steps), calc(100% / var(--x-steps)));
+  grid-template-rows: repeat(var(--y-steps), calc(100% / var(--y-steps)));
 }
 
 .preview img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  max-height: 300px;
+  max-width: 300px;
+  object-fit: contain;
 }
 
 .photo-switcher {

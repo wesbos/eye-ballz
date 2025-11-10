@@ -25,23 +25,23 @@ export function generateSteps({
     Array.from({ length: X_STEPS }, (_, x) => {
       const index = y * X_STEPS + x;
       // Horizontal Head Rotation - X-axis 20 = look left. -20 = look right.
-      const rotate_yaw = round(
+      const rotate_yaw = X_STEPS === 1 ? 0 : round(
         ROTATE_BOUND * 2 * (x / (X_STEPS - 1)) - ROTATE_BOUND,
         10
       );
       // Vertical Head Rotation - Y-axis. 20 = look down. -20 = look up.
-      const rotate_pitch = round(
+      const rotate_pitch = Y_STEPS === 1 ? 0 : round(
         ROTATE_BOUND * 2 * (y / (Y_STEPS - 1)) - ROTATE_BOUND,
         10
       );
 
       // Roll matches the pitch (inverted) - natural head tilt when looking up/down
       // const rotate_roll = -rotate_pitch;
-      const pupil_x = round(
+      const pupil_x = X_STEPS === 1 ? 0 : round(
         PUPIL_BOUND * 2 * (x / (X_STEPS - 1)) - PUPIL_BOUND,
         10
       );
-      const pupil_y = round(
+      const pupil_y = Y_STEPS === 1 ? 0 : round(
         (PUPIL_BOUND * 2 * (y / (Y_STEPS - 1)) - PUPIL_BOUND) * -1,
         10
       );

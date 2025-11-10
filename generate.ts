@@ -12,7 +12,7 @@ import {
 import pAll from 'p-all';
 import { photos } from './photos.ts';
 
-const activePhoto = photos.bean;
+const activePhoto = photos.weshandsome;
 
 const {steps, PREFIX, X_STEPS, Y_STEPS} = generateSteps({
   X_STEPS: activePhoto.X_STEPS,
@@ -54,7 +54,7 @@ async function generate(step: Step) {
       ...step,
     },
   });
-  await writeFile(outputPath, output[0]);
+  await writeFile(outputPath, output as Buffer);
   console.log(`Generated ${step.filename}...`);
 }
 

@@ -19,6 +19,18 @@ export const photos = {
     X_STEPS: 5,
     Y_STEPS: 5,
   },
+  weshandsome: {
+    filename: 'photos/wes-handsome.jpg',
+    PREFIX: 'wes-handsome',
+    X_STEPS: 1,
+    Y_STEPS: 10,
+  },
+  arnold: {
+    filename: 'photos/arnold.jpg',
+    PREFIX: 'arnold',
+    X_STEPS: 8,
+    Y_STEPS: 1,
+  },
   bean: {
     filename: 'photos/bean.webp',
     PREFIX: 'bean',

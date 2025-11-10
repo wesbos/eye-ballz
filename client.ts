@@ -113,7 +113,7 @@ function loadPhoto(photo: Photo) {
 }
 
 // Handle mouse movement
-function handleMouseMove(e: MouseEvent) {
+function handlePointerMove(e: MouseEvent) {
   // Throttle to match video FPS for smoother playback
   const now = performance.now();
   if (now - lastFrameTime < 1000 / FPS) {
@@ -189,7 +189,7 @@ function init() {
   document.querySelector('.photo-switcher-btn')?.classList.add('active');
 
   // Add mouse move listener
-  document.addEventListener('mousemove', handleMouseMove);
+  document.addEventListener('pointermove', handlePointerMove);
 }
 
 // Start the app
