@@ -1,67 +1,126 @@
 import { FPS, generateSteps } from './constants.js';
-import { activePhoto } from './photos.js';
+import { photos, Photo } from './photos.js';
 
+// State management
+let currentPhoto: Photo;
+let PREFIX: string;
+let Y_STEPS: number;
+let X_STEPS: number;
+let steps: ReturnType<typeof generateSteps>['steps'];
 
-const { PREFIX, Y_STEPS, X_STEPS, steps } = generateSteps({
-  X_STEPS: activePhoto.X_STEPS,
-  Y_STEPS: activePhoto.Y_STEPS,
-  PREFIX: activePhoto.PREFIX,
-});
-
-console.log(steps, PREFIX, Y_STEPS, X_STEPS);
-
-// Create a grid container
+// DOM elements
 const preview = document.querySelector('.preview') as HTMLDivElement;
-
-// Set the number of columns dynamically
-preview.style.setProperty('--x-steps', X_STEPS.toString());
-preview.style.setProperty('--y-steps', Y_STEPS.toString());
-
-// Store all image elements for updating
 const images: HTMLImageElement[] = [];
+let videoContainer: HTMLDivElement;
+let video: HTMLVideoElement;
+let lastFrameTime = 0;
 
-// Create video container
-const videoContainer = document.createElement('div');
-videoContainer.className = 'video-container';
+// Create photo switcher UI
+function createPhotoSwitcher() {
+  const switcher = document.createElement('div');
+  switcher.className = 'photo-switcher';
 
-// Create and setup video element
-const video = document.createElement('video');
-video.src = `./outputs/${PREFIX}/${PREFIX}.mp4`;
-video.preload = 'auto';
-video.muted = true;
-
-// Add video to container
-videoContainer.appendChild(video);
-
-// Add container to page
-document.body.insertBefore(videoContainer, preview);
-
-// Wait for video to load
-video.addEventListener('loadedmetadata', () => {
-  console.log('Video loaded, duration:', video.duration, 'frames:', X_STEPS * Y_STEPS);
-});
-
-// Generate the grid of images
-for (const row of steps) {
-  for (const step of row) {
+  Object.entries(photos).forEach(([key, photo]) => {
+    const button = document.createElement('button');
+    button.className = 'photo-switcher-btn';
+    button.dataset.photoKey = key;
 
     const img = document.createElement('img');
-    img.src = `./outputs/${PREFIX}/${step.filename}`;
-    img.alt = `Position ${step.x}, ${step.y}`;
-    preview.appendChild(img);
-    images.push(img);
-  }
+    img.src = photo.filename;
+    img.alt = key;
+
+    const label = document.createElement('span');
+    label.textContent = key;
+
+    button.appendChild(img);
+    button.appendChild(label);
+
+    button.addEventListener('click', () => {
+      loadPhoto(photo);
+      // Update active state
+      document.querySelectorAll('.photo-switcher-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      button.classList.add('active');
+    });
+
+    switcher.appendChild(button);
+  });
+
+  document.body.appendChild(switcher);
 }
 
-// Track mouse movement and update images
-let lastFrameTime = 0;
-document.addEventListener('mousemove', (e) => {
+// Initialize video container
+function initializeVideoContainer() {
+  if (videoContainer) {
+    document.body.removeChild(videoContainer);
+  }
+
+  videoContainer = document.createElement('div');
+  videoContainer.className = 'video-container';
+
+  video = document.createElement('video');
+  video.src = `./outputs/${PREFIX}/${PREFIX}.mp4`;
+  video.preload = 'auto';
+  video.muted = true;
+
+  videoContainer.appendChild(video);
+  document.body.insertBefore(videoContainer, preview);
+
+  video.addEventListener('loadedmetadata', () => {
+    console.log('Video loaded, duration:', video.duration, 'frames:', X_STEPS * Y_STEPS);
+  });
+}
+
+// Load a photo configuration
+function loadPhoto(photo: Photo) {
+  currentPhoto = photo;
+
+  const result = generateSteps({
+    X_STEPS: photo.X_STEPS,
+    Y_STEPS: photo.Y_STEPS,
+    PREFIX: photo.PREFIX,
+  });
+
+  PREFIX = result.PREFIX;
+  Y_STEPS = result.Y_STEPS;
+  X_STEPS = result.X_STEPS;
+  steps = result.steps;
+
+  console.log('Loading photo:', steps, PREFIX, Y_STEPS, X_STEPS);
+
+  // Update CSS variables
+  preview.style.setProperty('--x-steps', X_STEPS.toString());
+  preview.style.setProperty('--y-steps', Y_STEPS.toString());
+
+  // Clear existing images
+  preview.innerHTML = '';
+  images.length = 0;
+
+  // Generate the grid of images
+  for (const row of steps) {
+    for (const step of row) {
+      const img = document.createElement('img');
+      img.src = `./outputs/${PREFIX}/${step.filename}`;
+      img.alt = `Position ${step.x}, ${step.y}`;
+      preview.appendChild(img);
+      images.push(img);
+    }
+  }
+
+  // Reinitialize video
+  initializeVideoContainer();
+}
+
+// Handle mouse movement
+function handleMouseMove(e: MouseEvent) {
   // Throttle to match video FPS for smoother playback
   const now = performance.now();
   if (now - lastFrameTime < 1000 / FPS) {
     return;
   }
   lastFrameTime = now;
+
   // Calculate container center position
   const containerRect = videoContainer.getBoundingClientRect();
   const containerCenterX = containerRect.left + containerRect.width / 2;
@@ -88,10 +147,9 @@ document.addEventListener('mousemove', (e) => {
   const frameTime = frameIndex / FPS;
 
   // Update video currentTime if it's loaded
-  if (video.readyState >= 2) { // HAVE_CURRENT_DATA or better
+  if (video && video.readyState >= 2) { // HAVE_CURRENT_DATA or better
     video.currentTime = frameTime;
   }
-  console.log(videoXIndex, videoYIndex, frameTime);
 
   // Update all images
   images.forEach((img) => {
@@ -117,5 +175,23 @@ document.addEventListener('mousemove', (e) => {
     // Update the image source - access nested array [row][col]
     img.src = `./outputs/${PREFIX}/${steps[yIndex][xIndex].filename}`;
   });
-});
+}
+
+// Initialize app
+function init() {
+  createPhotoSwitcher();
+
+  // Load the first photo
+  const firstPhoto = Object.values(photos)[0];
+  loadPhoto(firstPhoto);
+
+  // Set first button as active
+  document.querySelector('.photo-switcher-btn')?.classList.add('active');
+
+  // Add mouse move listener
+  document.addEventListener('mousemove', handleMouseMove);
+}
+
+// Start the app
+init();
 

@@ -1,4 +1,4 @@
-import { FPS, PREFIX, X_STEPS, Y_STEPS, generateSteps } from './constants.js';
+import { FPS, generateSteps } from './constants.js';
 import {
   Scene,
   PerspectiveCamera,
@@ -10,19 +10,32 @@ import {
   TextureLoader,
   DoubleSide,
   SRGBColorSpace,
-  CanvasTexture,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { activePhoto } from './photos.js';
-
+import { photos, Photo } from './photos.js';
 
 const DEFAULT_DISPLACEMENT_SCALE = 0.5;
-const {steps, PREFIX, X_STEPS, Y_STEPS} = generateSteps(activePhoto);
 
-// Create container for 3D viewer
+// State management
+let currentPhoto: Photo;
+let PREFIX: string;
+let Y_STEPS: number;
+let X_STEPS: number;
+let steps: ReturnType<typeof generateSteps>['steps'];
+
+// DOM elements
 const viewerContainer = document.createElement('div');
 viewerContainer.className = 'viewer-3d-container';
 document.body.appendChild(viewerContainer);
+
+// Three.js references
+const textureLoader = new TextureLoader();
+let photoTextures: Map<string, any> = new Map();
+let depthTextures: Map<string, any> = new Map();
+let material: MeshStandardMaterial;
+let lastFrameTime = 0;
+let currentXIndex = 0;
+let currentYIndex = 0;
 
 // Setup Three.js scene
 function setupScene() {
@@ -45,7 +58,7 @@ function setupScene() {
   scene.add(light);
 
   // Create material for the plane
-  const material = new MeshStandardMaterial({
+  material = new MeshStandardMaterial({
     side: DoubleSide,
     displacementScale: DEFAULT_DISPLACEMENT_SCALE,
   });
@@ -72,17 +85,17 @@ function setupScene() {
     renderer.setSize(viewerContainer.offsetWidth, viewerContainer.offsetHeight);
   });
 
-  return { canvas: canvasEl, material, mesh };
+  return { canvas: canvasEl, material };
 }
 
 // Preload all textures
-const textureLoader = new TextureLoader();
-const photoTextures: Map<string, any> = new Map();
-const depthTextures: Map<string, any> = new Map();
-
 async function preloadTextures() {
+  // Clear existing textures
+  photoTextures.clear();
+  depthTextures.clear();
+
   const allSteps = steps.flat();
-  console.log(`Preloading ${allSteps.length} textures...`);
+  console.log(`Preloading ${allSteps.length} textures for ${PREFIX}...`);
 
   // Load in batches to avoid overwhelming the browser
   const batchSize = 10;
@@ -117,27 +130,79 @@ async function preloadTextures() {
   console.log('All textures loaded!');
 }
 
-// Initialize scene
-const { canvas, material } = setupScene();
-viewerContainer.appendChild(canvas);
+// Create photo switcher UI
+function createPhotoSwitcher() {
+  const switcher = document.createElement('div');
+  switcher.className = 'photo-switcher';
 
-// Preload textures
-await preloadTextures();
+  Object.entries(photos).forEach(([key, photo]) => {
+    const button = document.createElement('button');
+    button.className = 'photo-switcher-btn';
+    button.dataset.photoKey = key;
 
-// Track mouse movement and update 3D view
-let lastFrameTime = 0;
-let currentXIndex = Math.floor(X_STEPS / 2);
-let currentYIndex = Math.floor(Y_STEPS / 2);
+    const img = document.createElement('img');
+    img.src = photo.filename;
+    img.alt = key;
 
-// Set initial texture
-const initialStep = steps[currentYIndex][currentXIndex];
-if (photoTextures.has(initialStep.filename)) {
-  material.map = photoTextures.get(initialStep.filename);
-  material.displacementMap = depthTextures.get(initialStep.filename);
-  material.needsUpdate = true;
+    const label = document.createElement('span');
+    label.textContent = key;
+
+    button.appendChild(img);
+    button.appendChild(label);
+
+    button.addEventListener('click', async () => {
+      // Update active state
+      document.querySelectorAll('.photo-switcher-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      button.classList.add('active');
+      button.disabled = true;
+
+      await loadPhoto(photo);
+      button.disabled = false;
+    });
+
+    switcher.appendChild(button);
+  });
+
+  document.body.appendChild(switcher);
 }
 
-document.addEventListener('mousemove', (e) => {
+// Load a photo configuration
+async function loadPhoto(photo: Photo) {
+  currentPhoto = photo;
+
+  const result = generateSteps({
+    X_STEPS: photo.X_STEPS,
+    Y_STEPS: photo.Y_STEPS,
+    PREFIX: photo.PREFIX,
+  });
+
+  PREFIX = result.PREFIX;
+  Y_STEPS = result.Y_STEPS;
+  X_STEPS = result.X_STEPS;
+  steps = result.steps;
+
+  console.log('Loading photo:', PREFIX, X_STEPS, Y_STEPS);
+
+  // Preload textures for new photo
+  await preloadTextures();
+
+  // Reset indices to center
+  currentXIndex = Math.floor(X_STEPS / 2);
+  currentYIndex = Math.floor(Y_STEPS / 2);
+
+  // Set initial texture
+  const initialStep = steps[currentYIndex][currentXIndex];
+  if (photoTextures.has(initialStep.filename)) {
+    material.map = photoTextures.get(initialStep.filename);
+    material.displacementMap = depthTextures.get(initialStep.filename);
+    material.needsUpdate = true;
+  }
+}
+
+// Handle mouse movement
+function handleMouseMove(e: MouseEvent) {
   // Throttle to match video FPS for smoother playback
   const now = performance.now();
   if (now - lastFrameTime < 1000 / FPS) {
@@ -178,27 +243,49 @@ document.addEventListener('mousemove', (e) => {
       material.needsUpdate = true;
     }
   }
-});
+}
 
-// Add displacement scale control
-const depthControl = document.createElement('input');
-depthControl.type = 'range';
-depthControl.min = '0';
-depthControl.max = '5';
-depthControl.step = '0.1';
-depthControl.value = DEFAULT_DISPLACEMENT_SCALE.toString();
-depthControl.className = 'depth-control';
+// Initialize app
+async function init() {
+  // Setup scene
+  const { canvas } = setupScene();
+  viewerContainer.appendChild(canvas);
 
-const depthLabel = document.createElement('label');
-// depthLabel.textContent = 'Depth: ';
-depthLabel.appendChild(depthControl);
-viewerContainer.appendChild(depthLabel);
+  // Add depth control
+  const depthControl = document.createElement('input');
+  depthControl.type = 'range';
+  depthControl.min = '0';
+  depthControl.max = '5';
+  depthControl.step = '0.1';
+  depthControl.value = DEFAULT_DISPLACEMENT_SCALE.toString();
+  depthControl.className = 'depth-control';
 
-depthControl.addEventListener('input', (e) => {
-  const value = parseFloat((e.target as HTMLInputElement).value);
-  material.displacementScale = value;
-  material.needsUpdate = true;
-});
+  const depthLabel = document.createElement('label');
+  depthLabel.appendChild(depthControl);
+  viewerContainer.appendChild(depthLabel);
+
+  depthControl.addEventListener('input', (e) => {
+    const value = parseFloat((e.target as HTMLInputElement).value);
+    material.displacementScale = value;
+    material.needsUpdate = true;
+  });
+
+  // Create photo switcher
+  createPhotoSwitcher();
+
+  // Load first photo
+  const firstPhoto = Object.values(photos)[0];
+  await loadPhoto(firstPhoto);
+
+  // Set first button as active
+  document.querySelector('.photo-switcher-btn')?.classList.add('active');
+
+  // Add mouse move listener
+  document.addEventListener('mousemove', handleMouseMove);
+}
+
+// Start the app
+init();
 
 export {};
 

@@ -6,6 +6,7 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "module": "nodenext",
-    "target": "esnext"
+    "target": "esnext",
+    "allowImportingTsExtensions": true
   }
 }

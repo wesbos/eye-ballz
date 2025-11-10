@@ -10,11 +10,13 @@ import {
   generateSteps,
 } from "./constants.ts";
 import pAll from 'p-all';
-import { activePhoto } from './photos.ts';
+import { photos } from './photos.ts';
+
+const activePhoto = photos.bean;
 
 const {steps, PREFIX, X_STEPS, Y_STEPS} = generateSteps({
-  X_STEPS: 5,
-  Y_STEPS: 5,
+  X_STEPS: activePhoto.X_STEPS,
+  Y_STEPS: activePhoto.Y_STEPS,
   PREFIX: activePhoto.PREFIX,
 });
 
@@ -109,11 +111,6 @@ console.log(`Estimated cost: ${formatter.format(cost)}`);
 
 const actions = steps.flat().map((step) => () => generate(step));
 await pAll(actions, { concurrency: 5 });
-
-// await Promise.all(steps.flat().map(generate));
-// for(const step of steps.flat()) {
-//   await generate(step);
-// }
 
 // Generate the video from all images
 console.log(`Generating video from ${steps.flat().length} images...`);

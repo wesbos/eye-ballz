@@ -46,3 +46,50 @@ body {
   height: 100%;
   object-fit: cover;
 }
+
+.photo-switcher {
+  z-index: 1000;
+  display: flex;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 15px;
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+}
+
+.photo-switcher-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.photo-switcher-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.photo-switcher-btn.active {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.photo-switcher-btn img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.photo-switcher-btn span {
+  color: white;
+  font-size: 12px;
+  font-family: system-ui, -apple-system, sans-serif;
+  text-transform: capitalize;
+}
