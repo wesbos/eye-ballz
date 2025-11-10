@@ -13,14 +13,11 @@ import {
   CanvasTexture,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { activePhoto } from './photos.js';
 
 
 const DEFAULT_DISPLACEMENT_SCALE = 0.5;
-const {steps, PREFIX, X_STEPS, Y_STEPS} = generateSteps({
-  X_STEPS: 10,
-  Y_STEPS: 10,
-  PREFIX: 'wes-avatar',
-});
+const {steps, PREFIX, X_STEPS, Y_STEPS} = generateSteps(activePhoto);
 
 // Create container for 3D viewer
 const viewerContainer = document.createElement('div');

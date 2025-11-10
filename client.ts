@@ -1,10 +1,11 @@
 import { FPS, generateSteps } from './constants.js';
+import { activePhoto } from './photos.js';
 
 
 const { PREFIX, Y_STEPS, X_STEPS, steps } = generateSteps({
-  X_STEPS: 10,
-  Y_STEPS: 10,
-  PREFIX: 'wes-avatar',
+  X_STEPS: activePhoto.X_STEPS,
+  Y_STEPS: activePhoto.Y_STEPS,
+  PREFIX: activePhoto.PREFIX,
 });
 
 console.log(steps, PREFIX, Y_STEPS, X_STEPS);

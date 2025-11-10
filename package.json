@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "generate": "node --env-file .env generate.ts",
+    "depth": "node --env-file .env depth.ts",
     "preview": "vite --port 6767"
   },
   "keywords": [],

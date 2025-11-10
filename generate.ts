@@ -6,15 +6,16 @@ import { exec } from "node:child_process";
 import { promisify } from "node:util";
 import {
   FPS,
-  Step,
+  type Step,
   generateSteps,
-} from "./constants.js";
+} from "./constants.ts";
 import pAll from 'p-all';
+import { activePhoto } from './photos.ts';
 
 const {steps, PREFIX, X_STEPS, Y_STEPS} = generateSteps({
-  X_STEPS: 10,
-  Y_STEPS: 10,
-  PREFIX: 'snickers',
+  X_STEPS: 5,
+  Y_STEPS: 5,
+  PREFIX: activePhoto.PREFIX,
 });
 
 const execAsync = promisify(exec);
@@ -26,8 +27,10 @@ const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
 });
 
-const image = fs.readFileSync("photos/snickers.jpg");
+const image = fs.readFileSync(activePhoto.filename);
 
+
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
 async function generate(step: Step) {
   const outputDir = path.join(__dirname, "outputs", PREFIX);
   const outputPath = path.join(outputDir, step.filename);

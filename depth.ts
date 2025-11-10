@@ -19,6 +19,7 @@ const depthEstimator = await pipeline(
   "Xenova/depth-anything-large-hf",
 );
 
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 async function estimateDepth(step: Step) {
   console.log(`Estimating depth for ${step.filename}...`);
