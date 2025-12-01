@@ -16,13 +16,31 @@ echo "REPLICATE_API_TOKEN=your_token_here" > .env
 
 ### 1. Configure Your Settings
 
+#### Using Photo Presets
+
+The project uses a photo registry system (`photos.ts`) for managing different subjects:
+
+```typescript
+// photos.ts defines presets like:
+export const photos = {
+  weshandsome: { filename: './photos/wes-handsome.jpg', PREFIX: 'wes-handsome', X_STEPS: 25, Y_STEPS: 25 },
+  arnold: { filename: './photos/arnold.webp', PREFIX: 'arnold', X_STEPS: 8, Y_STEPS: 1 }
+}
+```
+
+To switch subjects, update `activePhoto` in both:
+- `generate.ts`: `const activePhoto = photos.weshandsome`
+- `depth.ts`: `const activePhoto = photos.weshandsome`
+
+#### Global Settings
+
 Edit `constants.ts`:
 
-- `X_STEPS` / `Y_STEPS`: Grid size (e.g., 25x25 = 625 frames)
 - `ROTATE_BOUND`: Head rotation angle range (degrees)
 - `PUPIL_BOUND`: Pupil movement range
-- `PREFIX`: Output folder name
 - `FPS`: Video framerate
+
+**Note:** `X_STEPS`, `Y_STEPS`, and `PREFIX` are set per-photo in `photos.ts`
 
 ### 2. Generate Images and Video
 
@@ -55,11 +73,19 @@ Features:
 
 #### 3D Depth Viewer
 
+First, generate depth maps:
+
+```bash
+pnpm run depth
+```
+
+Then start the preview server:
+
 ```bash
 pnpm run preview
 ```
 
-Then open http://localhost:6767/viewer-3d.html
+Open http://localhost:6767/viewer-3d.html
 
 Features:
 
@@ -68,19 +94,18 @@ Features:
 - Depth scale slider
 - Mouse-controlled gaze direction
 
-**Note:** The 3D viewer requires depth maps. Generate them using the `depth.ts` script if you haven't already.
-
 ## File Structure
 
 ```
-app/
-├── constants.ts          # Configuration
+├── constants.ts          # Configuration & step generation
+├── photos.ts             # Photo registry & presets
 ├── generate.ts           # Image & video generation
 ├── client.ts             # 2D preview viewer
 ├── viewer-3d.ts          # 3D depth viewer
 ├── depth.ts              # Depth map generator (optional)
 ├── preview.html          # 2D viewer page
 ├── viewer-3d.html        # 3D viewer page
+├── photos/               # Source photos
 └── outputs/
     └── {PREFIX}/
         ├── *.webp        # Generated images
